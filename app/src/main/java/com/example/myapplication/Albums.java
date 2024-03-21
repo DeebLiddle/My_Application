@@ -45,12 +45,6 @@ public class Albums extends Activity {
     private String pathiden;
     private String resultden;
     @SuppressLint("HandlerLeak")
-    Handler handler = new Handler() {
-        @Override
-        public void handleMessage(@NonNull Message msg) {
-//        resultden =
-        }
-    };
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

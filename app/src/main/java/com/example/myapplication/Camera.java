@@ -11,7 +11,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.Looper;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
@@ -32,16 +31,19 @@ import java.io.IOException;
 public class Camera extends Activity {
     private ImageView cameraPicture;
     public static final int TAKE_PHOTO = 1;
-    private Button button1, button2;
+    private Button pictureSave=null;
     private Uri imageUri;
     private String uriden;
+    private String token;
+    private String pathiden;
     private String resultden;
 
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.albums);
+        setContentView(R.layout.camera);
 
+        pictureSave=findViewById(R.id.pictureSave);
         cameraPicture = findViewById(R.id.picture);
 
         // 创建一个File对象，用于保存摄像头拍下的图片，这里把图片命名为output_image.jpg
@@ -70,55 +72,17 @@ public class Camera extends Activity {
         }
         // 动态申请权限
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, TAKE_PHOTO);
+            ActivityCompat.requestPermissions( this, new String[]{Manifest.permission.CAMERA}, TAKE_PHOTO);
         } else {
             // 启动相机程序
             startCamera();
-            BitmapDrawable bmpDrawable = (BitmapDrawable) cameraPicture.getDrawable();
-            Bitmap bitmap = bmpDrawable.getBitmap();
-            saveToSystemGallery(bitmap);//将图片保存到本地
         }
 
 
+        pictureSave.setOnClickListener(new Camera.pictureSaveFunction());
 
-        /*文字识别部分*/
-        button1 = findViewById(R.id.pictureIdentity2);
-        button1.setOnClickListener(v -> new Thread() {
-            @Override
-            public void run() {
-                try {
-                    resultden = AccurateBasic.accurateBasic(uriden);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-                if (Build.VERSION.SDK_INT >= 23) {
-                    int REQUEST_CODE_CONTACT = 101;
-                    String[] permissions = {
-                            Manifest.permission.WRITE_EXTERNAL_STORAGE};
-                    //验证是否许可权限
-                    for (String str : permissions) {
-                        if (Camera.this.checkSelfPermission(str) != PackageManager.PERMISSION_GRANTED) {
-                            //申请权限
-                            Camera.this.requestPermissions(permissions, REQUEST_CODE_CONTACT);
-                            return;
-                        } else {
-                            FileLog fileLog = new FileLog();
-                            fileLog.saveLog("识别结果", resultden, "识别结果");
-                            if (fileLog.saveLog("识别结果", resultden, "识别结果") == true) {
-                                Looper.prepare();
-                                Toast.makeText(getApplicationContext(), "文档生成成功！", Toast.LENGTH_SHORT).show();
-                                Looper.loop();
-                            }
-                        }
-                    }
-
-                }
-
-            }
-        }.start());
-
-        button2 = findViewById(R.id.pictureback2);
-        button2.setOnClickListener(new View.OnClickListener() {
+        Button button1=findViewById(R.id.pictureback);
+        button1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(v.getContext(), MainActivity.class);
@@ -127,39 +91,71 @@ public class Camera extends Activity {
             }
         });
 
+        /*文字识别*/
+        Button button2=findViewById(R.id.pictureIdentity);
+        button2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                System.out.println(uriden);
+                new Thread(){
+                    @Override
+                    public void run() {
+                        try {
+                            resultden=AccurateBasic.accurateBasic(uriden);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                        if (Build.VERSION.SDK_INT >= 23) {
+                            int REQUEST_CODE_CONTACT = 101;
+                            String[] permissions = {
+                                    Manifest.permission.WRITE_EXTERNAL_STORAGE};
+                            //验证是否许可权限
+                            for (String str : permissions) {
+                                if (Camera.this.checkSelfPermission(str) != PackageManager.PERMISSION_GRANTED) {
+                                    //申请权限
+                                    Camera.this.requestPermissions(permissions, REQUEST_CODE_CONTACT);
+                                    return;
+                                } else {
+                                    FileLog fileLog=new FileLog();
+                                    fileLog.saveLog("标题",resultden,"文件名");
+                                    Toast.makeText(getApplicationContext(),"文档生成成功！",Toast.LENGTH_SHORT).show();
+                                }
+                            }
+
+                        }
+                    }
+                }.start();
+                System.out.println(resultden);
+            }
+        });
+
+
+
     }
 
-
     private void startCamera() {
-        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        Intent intent4 = new Intent("android.media.action.IMAGE_CAPTURE");
         // 指定图片的输出地址为imageUri
-        intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
-        // 检查是否有可以处理这个 Intent 的应用
-        if (intent.resolveActivity(getPackageManager()) != null) {
-            startActivityForResult(intent, TAKE_PHOTO);
-            uriden = imageUri.getPath();
-        } else {
-            // 如果没有找到可以处理这个 Intent 的应用，那么打印一条错误信息
-            Log.e("Camera", "No camera app found");
-        }
+        intent4.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+        startActivityForResult(intent4, TAKE_PHOTO);
+
     }
 
 
     private class pictureSaveFunction implements View.OnClickListener {
-        public void onClick(View view) {
+        public void onClick(View view){
             BitmapDrawable bmpDrawable = (BitmapDrawable) cameraPicture.getDrawable();
             Bitmap bitmap = bmpDrawable.getBitmap();
             saveToSystemGallery(bitmap);//将图片保存到本地
-            Toast.makeText(getApplicationContext(), "图片保存成功！", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(),"图片保存成功！",Toast.LENGTH_SHORT).show();
         }
-
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         switch (requestCode) {
             case TAKE_PHOTO:
-                if (requestCode == TAKE_PHOTO && resultCode == RESULT_OK) {
+                if (requestCode == TAKE_PHOTO && resultCode == RESULT_OK ) {
                     try {
                         // 将图片解析成Bitmap对象
                         Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(imageUri));
@@ -173,10 +169,9 @@ public class Camera extends Activity {
                 break;
         }
     }
-
     public void saveToSystemGallery(Bitmap bmp) {
         // 首先保存图片
-        File appDir = new File(Environment.getExternalStorageDirectory(), "Pictures");
+        File appDir = new File(Environment.getExternalStorageDirectory(), "cinema");
         if (!appDir.exists()) {
             appDir.mkdir();
         }
@@ -194,13 +189,19 @@ public class Camera extends Activity {
         }
 
         // 其次把文件插入到系统图库
+        try {
+            MediaStore.Images.Media.insertImage(getContentResolver(),
+                    file.getAbsolutePath(), fileName, null);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
 
         //sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.parse(file.getAbsolutePath())));
         Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
         Uri uri = Uri.fromFile(file);
         intent.setData(uri);
         sendBroadcast(intent);// 发送广播，通知图库更新
-        uriden = uri.getPath();
+        uriden=uri.getPath();
     }
 
 }
