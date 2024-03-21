@@ -11,6 +11,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Looper;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
@@ -33,9 +34,6 @@ public class Camera extends Activity {
     public static final int TAKE_PHOTO = 1;
     private Button pictureSave=null;
     private Uri imageUri;
-    private String uriden;
-    private String token;
-    private String pathiden;
     private String resultden;
 
 
@@ -49,6 +47,7 @@ public class Camera extends Activity {
         // 创建一个File对象，用于保存摄像头拍下的图片，这里把图片命名为output_image.jpg
         // 并将它存放在手机SD卡的应用关联缓存目录下
         File outputImage = new File(getExternalCacheDir(), "output_image.jpg");
+        String imgPath = outputImage.getAbsolutePath();
         // 对照片的更换设置
         try {
             // 如果上一次的照片存在，就删除
@@ -96,12 +95,12 @@ public class Camera extends Activity {
         button2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                System.out.println(uriden);
                 new Thread(){
                     @Override
                     public void run() {
+
                         try {
-                            resultden=AccurateBasic.accurateBasic(uriden);
+                            resultden=AccurateBasic.accurateBasic(imgPath);
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
@@ -118,7 +117,9 @@ public class Camera extends Activity {
                                 } else {
                                     FileLog fileLog=new FileLog();
                                     fileLog.saveLog("标题",resultden,"文件名");
+                                    Looper.prepare();
                                     Toast.makeText(getApplicationContext(),"文档生成成功！",Toast.LENGTH_SHORT).show();
+                                    Looper.loop();
                                 }
                             }
 
@@ -196,12 +197,7 @@ public class Camera extends Activity {
             e.printStackTrace();
         }
 
-        //sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.parse(file.getAbsolutePath())));
-        Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-        Uri uri = Uri.fromFile(file);
-        intent.setData(uri);
-        sendBroadcast(intent);// 发送广播，通知图库更新
-        uriden=uri.getPath();
+
     }
 
 }
