@@ -148,7 +148,9 @@ public class Camera extends Activity {
             BitmapDrawable bmpDrawable = (BitmapDrawable) cameraPicture.getDrawable();
             Bitmap bitmap = bmpDrawable.getBitmap();
             saveToSystemGallery(bitmap);//将图片保存到本地
+            Looper.prepare();
             Toast.makeText(getApplicationContext(),"图片保存成功！",Toast.LENGTH_SHORT).show();
+            Looper.loop();
         }
     }
 
